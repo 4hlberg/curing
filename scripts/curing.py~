@@ -1,0 +1,123 @@
+#!/usr/bin/python3.u7
+
+import Adafruit_DHT
+import datetime
+import sqlite3
+import os
+import RPi.GPIO as GPIO
+import sys
+
+DHT_SENSOR = Adafruit_DHT.DHT22
+
+DHT_PIN = 4
+db_file = "/home/pi/testscripts/curing"
+get_settings_sql = ''' SELECT * FROM SETTINGS '''
+write_readings_sql = ''' INSERT INTO readings (temp, humid, reading_time, failure, sensor_name) VALUES (?, ?, ?, ?, ?)''' 
+write_heartbeat_sql = ''' INSERT INTO heartbeat (last_heartbeat, mode) VALUES (?, ?)'''
+
+GPIO.setmode(GPIO.BCM)
+
+''' list wiht pin numbers '''
+
+PINLIST = [22, 27, 17, 18]
+FRIGE_PIN = 22
+HUMID_PIN = 27
+FAN_PIN = 17
+HEAT_PIN = 18
+
+#loop through pins and set mode and state to 'high'
+
+for i in PINLIST:
+    GPIO.setup(i, GPIO.OUT)
+    GPIO.output(i, GPIO.HIGH)
+
+def create_connection(db_file):
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+    except Error as e:
+        print(e)
+    print('stage a\n')
+    return conn
+
+def insert_reading(conn, reading):
+    ''' PRINT LAST READINGS TO DB '''
+    cur = conn.cursor()
+    cur.execute(write_readings_sql, reading)
+    conn.commit()
+    print('stage b\n')
+    return cur.lastrowid 
+
+def write_heartbeat():
+    ''' INSERT SIGN OF LIFE IN TO TABLE IN DB '''
+    timestamp =  datetime.datetime.now()
+    cur = conn.cursor()
+    cur.execute(read_heartbeat_sql)
+    cur.execute(write_heartbeat_sql)
+    return cur.lastrowid
+    
+def get_settings(conn):
+    ''' GET SETTINGS FROM DB, TO ACT UPON '''
+    cur = conn.cursor()
+    #temp_max, temp_min, temp_panic, humid_max, humid_min, humid_panic, humid_duty_cycle, fan_duty_cycle = cur.execute(get_settings_sql)
+    cur.execute(get_settings_sql)
+    settings = cur.fetchall()
+    table_id, temp_max, temp_min, temp_panic, humid_max, humid_min, humid_panic, humid_duty_cycle, fan_duty_cycle = settings[0]
+    print(f"Max temp allowed is {temp_max}")
+
+    return(temp_max, temp_min, temp_panic, humid_max, humid_min, humid_panic, humid_duty_cycle, fan_duty_cycle, temp_delta, humid_delta)
+
+def determine_temp(temp_reading, temp_min, temp_max, temp_delta):
+    if temp_reading + temp_delta < temp_max and temp_reading - temp_delta > temp_min:
+        fridge_mode = 'ON'
+    elif temp_reading + temp_delta > temp_max:
+        fridge_mode = 'ON'
+    elif temp_reading - temp_delta < temp_min:
+        fridge_mode = 'OFF'
+    else:
+        fridge_mode = 'ON'
+    return (fridge_mode)
+    
+
+def get_sensor_readings(): 
+    ''' GET THE READINGS FROM SENSOR '''
+
+    humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN)
+    if humidity is None and temperature is None:
+        sys.stderr.write("Failed to get a reading, forcing 10 degrees and 80% humidity\n")
+        humid_reading = 80
+        temp_reading = 10
+        last_reading_time = datetime.datetime.now()
+        failure = 1
+        
+    else:
+        temp_reading = "{0:0.1f}".format(temperature)
+        humid_reading = "{0:0.1f}".format(humidity)
+        last_reading_time = datetime.datetime.now()
+        failure = 0
+        
+    return(temp_reading, humid_reading,last_reading_time, failure, "DHT22")
+
+if __name__ == '__main__':
+    '''Do the database stuff in the same method?? '''
+    ''' Write to heartbeat to make sure I'm alive '''
+    write_heartbeat()
+    ''' Get sensor readings '''
+    readings = get_sensor_readings()
+    reading_id = insert_reading(create_connection(db_file), readings)
+    print(reading_id)
+    settings = get_settings(create_connection(db_file))
+    ''' compare settings to the readings and decide if action needs to be taken. Starting with temperature'''
+    fridge_mode = determine_temp(temp_reading, temp_min, temp_max, temp_delta)
+    ''' Set relay for fridge to the correct mode '''
+    if fridge_mode == 'ON'
+        GPIO.output(FRIDGE_PIN, GPIO.LOW)
+
+    humidity_mode = 
+    if temp_reading + temp_delta < temp_max:
+
+        print(f"Temperature in fridge is {temp_reading} standing by")
+        ''' check humidity '''
+        if humid_reading + humid_delta < humid_max:
+            print(f"Humidity is {humid_reading}, standing by")
+    
