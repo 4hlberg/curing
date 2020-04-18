@@ -127,6 +127,7 @@ if __name__ == '__main__':
 
     if humidity_mode == 'ON'
         GPIO.output(HUMID_PING, GPIO.LOW)
+    print(''' I've done what you wanted, now I will sleep''')
 
     # humidity_mode = 
     #if temp_reading + temp_delta < temp_max:
