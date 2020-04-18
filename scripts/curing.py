@@ -46,7 +46,7 @@ def insert_reading(conn, reading):
     conn.commit()
     return cur.lastrowid 
 
-def write_heartbeat():
+def write_heartbeat(conn):
     ''' INSERT SIGN OF LIFE IN TO TABLE IN DB '''
     timestamp =  datetime.datetime.now()
     cur = conn.cursor()
@@ -76,6 +76,14 @@ def determine_temp(temp_reading, temp_min, temp_max, temp_delta):
         fridge_mode = 'ON'
     return (fridge_mode)
     
+def determine_humid(humid_reading, humid_min, humid_max, humid_delta):
+    if humid_reading + humid_delta > humid_max:
+        humidity_mode = 'OFF'
+    elif humid_min < (humid_reading - humid_delta) and (humid_reading + humid_delta) < humid_max:
+        humidity_mode = 'OFF'
+    elif humid_reading - humid_delta < humid_min:
+        humidity_mode = 'ON'
+    return (humidity_mode)
 
 def get_sensor_readings(): 
     ''' GET THE READINGS FROM SENSOR
@@ -99,20 +107,27 @@ def get_sensor_readings():
     return(temp_reading, humid_reading,last_reading_time, failure, "DHT22")
 
 if __name__ == '__main__':
-    '''Do the database stuff in the same method?? '''
+    '''create connection to the database'''
+    conn = create_connection(db_file)
     ''' Write to heartbeat to make sure I'm alive '''
-    write_heartbeat()
+    write_heartbeat(conn)
     ''' Get sensor readings '''
-    readings = get_sensor_readings()
-    reading_id = insert_reading(create_connection(db_file), readings)
+    readings = get_sensor_readings(conn)
+    reading_id = insert_reading(conn, readings)
     print(reading_id)
-    settings = get_settings(create_connection(db_file))
+    settings = get_settings(conn)
     ''' compare settings to the readings and decide if action needs to be taken. Starting with temperature'''
     fridge_mode = determine_temp(temp_reading, temp_min, temp_max, temp_delta)
     ''' Set relay for fridge to the correct mode GPIO.LOW means ON and GPIO.HIGH means OFF '''
     if fridge_mode == 'ON'
         GPIO.output(FRIDGE_PIN, GPIO.LOW)
     ''' create function for humidity, will have to check if the fan can be on at the same time, otherwise check for if fan is running must be implemented '''
+    
+    humidity_mode = determine_humid(humid_reading, humid_min, humid_max, humid_delta)
+
+    if humidity_mode == 'ON'
+        GPIO.output(HUMID_PING, GPIO.LOW)
+
     # humidity_mode = 
     #if temp_reading + temp_delta < temp_max:
 
