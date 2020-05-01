@@ -1,4 +1,4 @@
-import sqlit3
+import sqlite3
 db_file = 'curing'
 
 def create_connection(db_file):

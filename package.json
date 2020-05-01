@@ -1,0 +1,17 @@
+{
+    "name": "curing",
+    "private": true,
+    "version": "0.0.1",
+    "description": "A repo for remotely controlling environment of a fridge to i.e. cure meats.",
+    "author": "Philip Ahlberg",
+    "license": "MIT",
+    "scripts": {
+        "install": "pipenv install",
+        "sync_pipenv": "pipenv lock",
+        "average": "python3 ./scripts/get_average.py",
+        "cleanup": "python3 ./scripts/db_cleanup.py",
+        "create": "python3 ./scripts/db_creation.py",
+        "test": "python3 ./scripts/relay_pin_test.py",
+        "curing": "python3 ./scripts/curing.py"
+    }
+}
