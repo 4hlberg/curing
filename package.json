@@ -12,6 +12,7 @@
         "cleanup": "python3 ./scripts/db_cleanup.py",
         "create": "python3 ./scripts/db_creation.py",
         "test": "python3 ./scripts/relay_pin_test.py",
-        "curing": "python3 ./scripts/curing.py"
+        "curing": "python3 ./scripts/curing.py",
+        "dashboard": "python3 ./dashboard/dashboard.py"
     }
 }
